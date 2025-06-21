@@ -35,12 +35,7 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .modal-overlay {
-            transition: opacity 0.3s ease;
-        }
-        .modal-content {
-            transition: transform 0.3s ease;
-        }
+        /* No need for modal-overlay or modal-content specific transitions here, as they are handled by Tailwind classes directly on the elements now */
     </style>
 </head>
 <body class="bg-stone-50 text-stone-800">
@@ -162,8 +157,8 @@
     </footer>
     
     <!-- Modal Structure -->
-    <div id="modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
-        <div class="modal-content bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95">
+    <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div id="modal-content-wrapper" class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
             <div class="sticky top-0 bg-white p-4 border-b border-stone-200 flex justify-between items-center">
                 <h3 id="modal-title" class="text-xl font-bold text-amber-700"></h3>
                 <button id="modal-close" class="text-stone-500 hover:text-stone-800">&times;</button>
@@ -236,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         themes: [
             { name: 'Cosificación e Hipersexualización', icon: '👁️', description: 'Reducción de la mujer a su cuerpo o atributos sexuales, como un objeto pasivo de deseo o consumo. Incluye contenido sexual explícito y un enfoque en la apariencia física por encima de todo.', examples: ['"Dale a tu cuerpo alegría Macarena, que tu cuerpo es para darle alegría y cosa buena" - Los del Río', '"Este totito siempre huele a coco, se lo muerdo, se lo escupo..." - Anónimo (citado en estudios)', '"Con tu física y tu química también tu anatomía" - Enrique Iglesias'] },
             { name: 'Control y Posesión', icon: '⛓️', description: 'Narrativas que implican propiedad o dominio masculino sobre la mujer, tratándola como una extensión de la identidad del hombre. Se manifiesta a través de un lenguaje posesivo o de conquista.', examples: ['"¿cuándo serás mía? si me quisieras, todo te daría" - David Bisbal', '"Yo seré tu amante cautivo" - Miguel Bosé', 'Uso recurrente del pronombre "mía" en el reggaeton para referirse a la pareja.'] },
-            { name: 'Violencia y Agresión', icon: '🔪', description: 'Incluye amenazas directas, descripciones de daño físico o violencia simbólica que denigra, intimida y normaliza la agresión hacia las mujeres.', examples: ['"Que no la encuentre jamás o sé que la mataré. Por favor sólo quiero matarla" - Loquillo', '"Dale con el látigo... pa´ que le duela otra vez" - Toby Toon', '"Castigarla para tener sexo, darle duro para que no se olvide" - Anónimo (citado en estudios)'] },
+            { name: 'Violencia y Agresión', icon: '🔪', description: 'Incluye amenazas directas, descripciones de daño físico o violencia simbólica que denigra, intimida y normaliza la agresión hacia las mujeres.', examples: ['"Que no la encuentre jamás o sé que la mataré. Por favor sólo quiero matarla. A punta de navaja besándola una vez más" - Loquillo', '"Dale con el látigo... pa´ que le duela otra vez" - Toby Toon', '"Castigarla para tener sexo, darle duro para que no se olvide" - Anónimo (citado en estudios)'] },
             { name: 'Infantilización', icon: '🍼', description: 'Uso de términos que reducen a las mujeres adultas a un estatus infantil o de objeto frágil, socavando su autonomía y madurez.', examples: ['"...eres como una muñeca, de esas de plástico fino" - Radio Futura', 'Uso generalizado de "bebé", "baby", "mami" o "totito" para referirse a mujeres adultas.'] },
             { name: 'Roles de Género Tradicionales', icon: '🏠', description: 'Refuerzo de la mujer en roles subordinados, pasivos o dependientes (domésticos, emocionales), y del hombre como dominante, proveedor o activo.', examples: ['Narrativa de la mujer que espera pasivamente el regreso de un hombre ("Rosas", La Oreja de Van Gogh)', 'Estudios identifican roles de "lavandera, ama de casa" para mujeres y "llevar el dinero a casa" para hombres.'] },
             { name: 'Contramensajes Feministas', icon: '✊', description: 'Canciones que desafían activamente los estereotipos, denuncian la violencia machista o se reapropian de insultos como un acto de empoderamiento.', examples: ['"Malo, malo, malo eres, no te pienses mejor que las mujeres" - Bebe', '"Si salgo sola, soy la zorra. Si me divierto, la más zorra" - Nebulossa'] }
@@ -246,7 +241,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const decadeSelector = document.getElementById('decade-selector');
     const decadeContentContainer = document.getElementById('decade-content-container');
     const themeGrid = document.getElementById('theme-grid');
-    const modal = document.getElementById('modal');
+    // Actualización de IDs para el modal
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const modalContentWrapper = document.getElementById('modal-content-wrapper');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
     const modalClose = document.getElementById('modal-close');
@@ -323,24 +320,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Funciones actualizadas para abrir y cerrar el modal
     function openModal(title, content) {
         modalTitle.textContent = title;
         modalBody.innerHTML = content;
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+        
+        modalBackdrop.classList.remove('hidden'); // Mostrar el fondo inmediatamente
+        document.body.style.overflow = 'hidden'; // Evitar el scroll del fondo
+        
+        // Activar transiciones después de un pequeño retardo
         setTimeout(() => {
-            modal.querySelector('.modal-overlay').classList.remove('opacity-0');
-            modal.querySelector('.modal-content').classList.remove('scale-95');
-        }, 10);
+            modalBackdrop.classList.remove('opacity-0');
+            modalContentWrapper.classList.remove('scale-95');
+        }, 10); // Pequeño retardo para que la transición se aplique
     }
 
     function closeModal() {
-        modal.querySelector('.modal-overlay').classList.add('opacity-0');
-        modal.querySelector('.modal-content').classList.add('scale-95');
+        modalBackdrop.classList.add('opacity-0'); // Iniciar transición de opacidad
+        modalContentWrapper.classList.add('scale-95'); // Iniciar transición de escala
+        document.body.style.overflow = 'auto'; // Habilitar el scroll del fondo inmediatamente
+        
+        // Ocultar completamente el modal después de que la transición termine
         setTimeout(() => {
-            modal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }, 300);
+            modalBackdrop.classList.add('hidden');
+        }, 300); // Coincide con la duración de la transición en Tailwind
     }
     
     function renderThemeGrid() {
@@ -366,9 +369,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Event listeners actualizados para cerrar el modal
     modalClose.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
+    modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) { // Solo cierra si se hace clic directamente en el fondo
             closeModal();
         }
     });
